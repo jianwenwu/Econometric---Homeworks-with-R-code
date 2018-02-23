@@ -1,0 +1,286 @@
+---
+title: "homework#6"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Jianwen Wu(83351)
+Prof.Kevin Foster
+ECO B2000
+
+1. What are the names of the people currently in your study group? Crystal Hernandez, Keyi Long, Jianwen Wu, Emmanuel Monroy
+
+
+2.
+
+Article #1: The impact of oil prices on the U.S. economy
+This article seeks to show how the past oil shocks affect the economy(GDP) and recent oil prices.  In order to support this claim, the 2008 Hamilton methodology of time series analysis was used.  In this paper, the author compared “one-year-ahead forecasts of the model for different oil shocks, and estimate the path of GDP given the oil shock in the first quarter of 2011.”  In this words, he used the past oil shocks data from first quarter of 2011 to predict GDP. The paper concluded that the oil price increase 14% growth in GDP.  This paper used the data “Oil Shocks from 1949-2010 with the Major Oil Shocks Highlighted.”  However, I was not able find the data online. 
+
+Citation: Bauch, Jacob H., " e Impact of Oil Prices on the U.S. Economy" (2011). CMC Senior eses. Paper 146. h p://scholarship.claremont.edu/cmc_theses/146
+
+Article #2: Oil shocks and the Macroeconomy: The Role of Price Variability*
+This article argue that change of oil prices would have bigger impact on real GNP in the stable oil prices environment than unstable oil prices environment.  The 1983 Hamilton time series model was used in this article.  The author used U.S. GNP data from 1948 and 1980.  This article concluded that positive normalized shocks have great effect on growth GNP and negative normalized shocks do not.
+
+Citation: Oil Shocks and the Macroeconomy: The Role of Price Variability Author(s): Kiseok Lee, Shawn Ni and Ronald A. Ratti
+
+Source: The Energy Journal, Vol. 16, No. 4 (1995), pp. 39-56 Published by: International Association for Energy Economics Stable URL: http://www.jstor.org/stable/41322616
+Accessed: 06-11-2016 07:19 UTC
+
+
+3. The NHIS dataset on the class page has information on some of the factors determining a
+person's health insurance status. Estimate logit and probit models of whether or not a
+person is insured; carefully consider whether some variables are endogenous. Explain the
+results of your regression including hypothesis tests of variables (perhaps build on some of
+your successful experiments from last week such as interaction effects). Carefully explain
+the results and give some examples of implied probabilities.
+
+In this assignment were seeking to study the factors that influence health insurance status.
+We will be using the data set 2014 National Health Interview Survey (NHIS). 
+Our dependent variable is whether an individual insured 0 or not insured 1.
+And we picked as the independent variables: age, whether the individuals were born in the USA, and 
+whether they are in the workforce and if they are Asian, or Hispanic.
+We will be using the following estimating regression models: logit, and probit models.
+
+
+```{r}
+load("/Users/jianwenwu/Desktop/ECO B2000/NHIS_2014/NHIS_2014.RData")
+attach(data_use1)
+
+
+Y<-cbind(NOTCOV)
+X <- cbind(AGE_P, Asian, Hispanic, educ_nohs, educ_hs, educ_smcoll, educ_as, educ_bach, educ_adv, borninUSA, inworkforce)
+
+```
+
+```{r}
+summary((Y))
+summary(X)
+table(Y)
+table(Y)/sum(table(Y))
+```
+In this dataset, it's about 87% of people had insurance cover, and only
+13% did not have it.
+
+
+
+
+Linear Regression
+```{r}
+linear<- lm(Y~X)
+summary(linear)
+```
+
+
+Logit model for the cdf of the logistic distribution, where the predicted probability is between 0 and 1.
+```{r}
+logit<- glm( Y~ X,family=binomial (link = "logit"))
+summary(logit)
+```
+
+Logit model odds ratios
+```{r}
+exp(logit$coefficients)
+```
+If the odds ratios is greater than 1, it means that outcome of people did not have insurance cover is more likely than outcome of people have insurance cover. In this dataset, the hispanic, people with no high school degree, and peopeo who are working now are less likely to insurance cover.
+
+Probit model For is the cdf of the standard normal distribution where the probability is limited 0 and 1.
+```{r}
+probit<- glm(Y ~ X, family=binomial (link="probit"))
+summary(probit)
+```
+
+Logit model average mariginal effects
+```{r}
+LogitScalar <- mean(dlogis(predict(logit, type = "link"))) #average of predict value
+LogitScalar
+AVG_MarginalLogit<-LogitScalar * coef(logit)
+```
+
+Probit model average mariginal effects
+```{r}
+# Probit model average marginal effects
+ProbitScalar <- mean(dnorm(predict(probit, type = "link")))
+ProbitScalar
+AVG_MarginalProbit<-ProbitScalar * coef(probit)
+```
+
+logit model predicted probabilities
+```{r}
+plogit<-predict(logit, type="response")
+summary(plogit)
+```
+
+probit model predicted probabilities
+```{r}
+pprobit<-predict(probit,type ="response")
+summary(pprobit)
+```
+
+
+percent correctly predicted values
+```{r}
+logitnoNA<- glm(Y ~ X, family=binomial (link = "logit"),na.action = na.exclude)
+probitnoNA<- glm(Y ~ X, family=binomial (link="probit"),na.action = na.exclude)
+table(true = Y, pred = round(fitted(probitnoNA)))
+table(true = Y, pred = round(fitted(logitnoNA)))
+
+```
+The fraction correctly predicted of logit is (70993+1424)/(70993+1424+812+10710)=0.86
+
+The fraction correctly predicted of probit is (70755+1653)/ (70755+10481+1050+1653)=0.86
+
+
+```{r}
+require("stargazer")
+stargazer(linear,logit, probit, type = "text")
+stargazer(AVG_MarginalProbit, AVG_MarginalProbit, type = "text")
+```
+
+
+ Pseudo R-squared
+```{r}
+probit0<-update(probitnoNA, formula= Y ~ 1)
+R_squared<- 1-as.vector(logLik(probitnoNA)/logLik(probit0))
+R_squared
+# 30%
+```
+
+Interpretation:
+Now we review the coefficient data for the models as a scale factor. So individuals born
+individuals the US ( compared to those born outsides the US individuals) are more likely to have insurance, individuals with higher 
+education (HS graduates and above, also - gets lower as education gets higher showing that more 
+education means more individuals have coverage) and Asians are more likely to have 
+health insurance, while Hispanic, and are less likely to have health insurance. Also individuals 
+who work were less likely to have health insurance, meaning that many people who work are 
+unfortunately uninsured!
+
+For the Marginal effect we found that individuals born in the US born are 9% more likely to 
+have insurance. Asians are 4% more likely and educated individuals gradually increase: HS 
+graduates are 1%, some college 6%, associates 6%, bachelors is 14% and advanced degrees are 
+19% more likely more likely to have insurance. Unfortunately, Hispanics, those individuals 
+with no degree are respectively 5% less likely to have insurance than non-Hispanics.
+
+The average of predicted probably of not being covered is approximately 14% which so the 
+calculated frequency. So the logit and probit models predict 86% of the values and the rest
+are misclassified. 
+
+
+
+
+
+
+
+Model with interaction
+
+
+Logit with interaction
+```{r}
+
+
+logit1<- glm(NOTCOV ~ AGE_P+ Asian+Hispanic+educ_nohs+ educ_hs+educ_smcoll+ educ_as+ educ_bach+ educ_adv+ inworkforce+ +married + married*inworkforce, family=binomial (link = "logit"))
+summary(logit1)
+```
+
+```{r}
+exp(logit1$coefficients)
+```
+
+If the odds ratios is greater than 1, it means that outcome of people did not have insurance cover is more likely than outcome of people have insurance cover. In this logit regression with interaction, the hispanic, Asian, people with no HS degree, peopeo who are working, people who are married are less likely to insurance cover.
+
+
+
+Probit regression with interaction
+```{r}
+probit1<- glm(NOTCOV ~  AGE_P+ Asian+Hispanic+educ_nohs+ educ_hs+educ_smcoll+ educ_as+ educ_bach+ educ_adv+ inworkforce+ +married + married*inworkforce,family=binomial (link="probit"))
+summary(probit1)
+```
+
+
+
+Logit model average mariginal effects with interaction
+```{r}
+LogitScalar1 <- mean(dlogis(predict(logit1, type = "link"))) 
+LogitScalar1
+AME_L<-LogitScalar1 * coef(logit1)
+```
+
+Probit model average mariginal effects with interaction
+```{r}
+# Probit model average marginal effects
+ProbitScalar1 <- mean(dnorm(predict(probit1, type = "link")))
+ProbitScalar1
+AME_P<-ProbitScalar1 * coef(probit1)
+```
+
+logit model predicted probabilities
+```{r}
+plogit1<-predict(logit1, type="response")
+summary(plogit1)
+```
+
+probit model predicted probabilities
+```{r}
+
+pprobit1<-predict(probit1,type ="response")
+summary(pprobit1)
+```
+
+
+percent correctly predicted values with interaction
+```{r}
+logitnoNA1<- glm(NOTCOV ~  AGE_P+ Asian+Hispanic+educ_nohs+ educ_hs+educ_smcoll+ educ_as+ educ_bach+ educ_adv+ inworkforce+ +married + married*inworkforce , family=binomial (link = "logit"),na.action = na.exclude)
+probitnoNA1<- glm(NOTCOV ~  AGE_P+ Asian+Hispanic+educ_nohs+ educ_hs+educ_smcoll+ educ_as+ educ_bach+ educ_adv+ inworkforce+ +married + married*inworkforce, family=binomial (link="probit"),na.action = na.exclude)
+table(true = NOTCOV, pred = round(fitted(probitnoNA1)))
+table(true = NOTCOV, pred = round(fitted(logitnoNA1)))
+```
+
+The fraction of correctly predicted for probit is 85%
+The fraction of correctly predicted for logit is 85%
+
+
+ Pseudo R-squared
+```{r}
+probit_k<-update(probitnoNA1, formula= NOTCOV ~ 1)
+R_squared<- 1-as.vector(logLik(probitnoNA1)/logLik(probit_k))
+R_squared
+# 29%
+```
+
+
+```{r}
+require("stargazer")
+
+stargazer(probit1, logit1, type = "text")
+stargazer(AME_P, AME_L, type = "text")
+```
+
+
+```{r}
+require(car)
+coefs <- names(coef(probit1))
+linearHypothesis(probit1, coefs[grep("married", coefs)], verbose=TRUE)
+coefs1 <- names(coef(logit1))
+linearHypothesis(logit1, coefs[grep("married", coefs)], verbose=TRUE)
+```
+
+
+Interpretation:
+We are trying to find the probability of person is not cover given AGE, Asian,Hispanic,educ_nohs, educ_hs,educ_smcoll, educ_as, educ_bach, educ_adv, inworkforce,married, married*inworkforce.
+Now we review the coefficient data for the models as a scale factor. Age, Asian, hispanic, person with no high school degree, person who is inworkforce, or married are less likely to have insurace cover. In the mean time, person with high school, person with some college degree, person with bachelor degree, person with advance degree, or person who married & working is more likely to have insurance cover.  We found out that married person less likely to have insurance cover than married & inworkforce person.
+
+
+For the average Marginal effect, we found that Asian are 2% less likely to have insurance cover, and hispanic are 1% less likely to have insurance cover. HS graduates are 2.3%, some college 7.9%, associates 7.8%, bachelors is 14.1% and advanced degrees are 
+19.0% more likely to have insurance. A married person is 2% less likely to have insurance cover, but a married & working person is 7.5% more likely to have insurace cover.
+
+
+The fraction correctly predicted of logit is (70993+1424)/(70993+1424+812+10710)=0.86
+The fraction correctly predicted of probit is (70755+1653)/ (70755+10481+1050+1653)=0.86
+Both model's fraction correctly is about 86%, which is indicated that both models are decent. The Pseudo R-squared for the logit model is 29%.
+
+For the linear hypothesis for the probit and logit model.  The Null is testing the interaction married&inworkforce is 0.  The interaction married&inworkforce from both models are signficant at 5% level.  Therefore,  we reject the the null.
+
+Endogenous variables have values that are determined by other variables within a model. In the 
+regression, the X variable should be exogenous the Y should be endogenous, so X causes Y.So none of
+our X values are endogenous.

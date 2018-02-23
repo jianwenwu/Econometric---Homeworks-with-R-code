@@ -1,0 +1,254 @@
+---
+title: 'homework #7'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Jianwen Wu
+ECO B2000
+Prof.Kevin Foster
+
+
+1. What are the names of the people currently in your study group?
+Crystal Hernandez
+
+2. Each person in the group should find 2 academic articles related to your current choice of final project. Write a short paragraph on each, concentrating on what data is used (and whether it is accessible), what econometric techniques, and what questions are addressed.
+
+Article 1:
+Time-Varying Effects of Oil Supply Shocks on the US Economy: Author(s): Christiane Baumeister and Gert Peersman: Source: American Economic Journal: Macroeconomics, Vol. 5, No. 4 (October 2013), pp. 1-28 Published by: American Economic Association: Stable URL: http://www.jstor.org/stable/43189560: 
+
+This paper aims to find a relationship between oil prices and macroeconomic activity since 1974. They also seek to analyze time varying effects that may arise from legislation passed on energy markets or changes in the automotive sector. The authors use a time series model with varying structural parameters to find the how effects of “shocks” in oil supply effect the US economy over time. The authors sought to change and expand on the work of Cogley and Sargent (2005), Primiceri (2005), and Benati and Mumtaz (2007), among others who instead analyzed the data by splitting the sample in half and estimating the bivartiate Var on rolling windows. The authors of this paper believed that this approach was not affective when dealing with structural change. They inferred that the rolling-window approach replied on samples that caused a simple degrees of freedom problem when estimating the reduced high-dimensional VAR model. In order to deal with these issues the authors used estimated by a multivariate structural VAR with time-varying parameter. The sought to show that oil supply shock in the time- varying parameter model can be normalized to hold constant across time in the real price of oil on impact. The authors found that volality of oil prices by supply shock has decreased over time, implying that oil shocks are not main cause of oil price movement in more recent years. The data for this paper was obtained from the US Energy Information Administration's (EIA) and Bureau of Labor Statistics both respectively saved to their online database.
+
+
+Article 2
+Oil Price Uncertainty; Author(s): JOHN ELDER and  APOSTOLOS SERLETIS; Source: Journal of Money, Credit and Banking, Vol. 42, No. 6 (September 2010), pp. 1137-1159Published by: Wiley; Stable URL: http://www.jstor.org/stable/40784879
+
+In this paper, we examine the direct effects of oil price uncertainty on real economic – Summary: This article seeks to look at the empirical relationship between uncertainty in oil prices (that can affect economic activity) and investments. The authors of this paper argue that the relationship between oil prices and economic activity is nonlinear, and that the continued increases in the price of oil have different outcomes than those with brief fluctuations or continued decreases. They believe that increases in oil prices, lead to higher overall costs, which cause a reduction of household and firm capital, that lead to aggregate demand. In this paper, the authors used a dynamic bivariate and structural vector autoregression model with some modifications to allow for bivariate generalized autoregressive conditional heteroscedasticity GARCH-in-mean errors. For the measure of uncertainty on the oil prices, the authors used the “conditional standard deviation of the forecast error” to determine differences in the oil prices. The authors’ results suggest that uncertainty regarding oil prices has an significant effect on GDP and many portions of fixed investments. There data suggests that incertainty in oil prices in the can decrease investment. The data used in their analysis was obtained by the Department of Energy, and is available on their website (https://www.eia.gov/dnav/pet/PET_CRD_CRPDN_ADC_MBBL_M.htm)
+
+
+
+3. This question uses the power of combinations. Pick a dataset from column 1 and some estimation technique from column 2 and show me some nice results. Continue. Impress me. (There are 77 combinations here; you can bet that at least one of them [prob more]
+will be on exam.)
+
+We used the PUMS data to run the Quantile Regression. We tried to find factors that affect total wages/salaries for the African American(25<=Age<=55) with low-, medium-, and high- Wages.
+
+```{r}
+
+load("/Users/jianwenwu/Desktop/ECO B2000/Dataset/PUMSdata/pums_NY.RData")
+require(quantreg)
+attach(dat_pums_NY)
+```
+
+Since, we only want to look at the African American prime Age
+```{r}
+
+primeAge <- (Age >= 25) & (Age <= 55) & work_fullyr
+
+dat_prime <- subset(dat_pums_NY,primeAge)
+detach(dat_pums_NY)
+attach(dat_prime)
+```
+
+We would like to look at the 10%, 25%, 50%, 75%, and 90% quantile of total income Wage or Salary.
+```{r}
+Y<-cbind(income_wagesal)
+X<-cbind(Age , female , AfAm , educ_hs , educ_smcoll , educ_as , educ_bach ,educ_adv)
+
+quantilereg10<-rq(Y ~ X, tau= 0.10, data=dat_prime)
+quantilereg25<-rq(Y ~ X, tau= 0.25, data=dat_prime)
+quantilereg50<-rq(Y ~ X, tau= 0.50, data=dat_prime)
+quantilereg75<-rq(Y ~ X, tau= 0.75, data=dat_prime)
+quantilereg90<-rq(Y ~ X, tau= 0.90, data=dat_prime)
+
+summary(quantilereg10)
+summary(quantilereg25)
+summary(quantilereg50)
+summary(quantilereg75)
+summary(quantilereg90)
+require("stargazer")
+
+stargazer(quantilereg10,quantilereg25, quantilereg50,quantilereg75,quantilereg90, type = "text" ,title="Results",align=TRUE)
+```
+
+Interpretation of the coefficients:
+
+Individuals who have Advdance degree earns $20,270 for those with low total wages/salary(10% quantile). $53,369 for those with median total wages/salary(50% quantile), and $124,373 for those with high total wages/salary(90% quantile). In other words
+
+Individials with higher eudcation earn more.  However, African American earns $3,650 less at 10% quantile of total wages/sarlaries, $8,281 less at 25% quantile, $13,646 less at 50% quantile, $19.317 less at 75% quantile, and $31,739 less at 90% quantile. 
+
+
+
+# Plotting data
+```{r}
+# Plotting data
+
+quantilereg.all <- rq(Y ~ X, tau = seq(0.05, 0.95, by = 0.05), data=dat_prime)
+
+quantilereg.plot <- summary(quantilereg.all)
+
+plot(quantilereg.plot)
+```
+
+The plot indicated when will quantile coefficient is outside the OLS confidence interval. If the quantile coefficient is outside the OSL confidence interval,then we have significant differences between the quantile and OLS coefficients.
+
+In the plot (Educ_adv), the red line is the OSL confidence interval and the black line is quantile coefficients confidence interval. Based on the individuals with advance degree plot, we knows that quantile coefficients are significant differences from 0. However, quantile cofficients is not significant different from the OLS coefficient at 70% quantile (when the OSL(Red line) cross the Quantile cofficient(Black line). 
+
+
+
+
+
+
+Now, we are using probit and logit regression to find what is the probability that individuals have insurance. Prob(Has_AnyHealthIns=1 | female, white, African American, Hispanic, No HS degree, HS degree, somecollege, associate degree, Bachelor degree, Advance degree, vETERAN, Married, Divorce, Unmarried, and working full year)
+
+```{r}
+detach(dat_prime)
+attach(dat_pums_NY)
+
+Y<-cbind(has_AnyHealthIns)
+X1 <- cbind(Age,female,white, AfAm, Asian, Hispanic, educ_nohs, educ_hs, educ_smcoll, educ_as, educ_bach, educ_adv, veteran, Married, divwidsep)
+
+summary((Y))
+summary(X1)
+table(Y)
+table(Y)/sum(table(Y))
+```
+
+Now, we are going to look at logit regression model
+```{r}
+
+logit<- glm(Y ~ X1, family=binomial (link = "logit"), na.action = na.exclude)
+
+summary(logit)
+```
+
+
+Logit model odds ratios:
+If the odds ratios is greater than 1, it means that outcome ofhave insurance cover is more likely than outcome of people did not have insurance cover. 
+```{r}
+exp(logit$coefficients)
+```
+
+Probit regression model
+```{r}
+
+probit<- glm(Y~X1, family = binomial(link = "probit"), na.action = na.exclude)
+summary(probit)
+```
+
+Logit model average mariginal effects
+```{r}
+LogitScalar <- mean(dlogis(predict(logit, type = "link"))) #average of predict value
+LogitScalar
+AVG_MarginalLogit<-LogitScalar * coef(logit)
+```
+
+Probit model average mariginal effects
+```{r}
+# Probit model average marginal effects
+ProbitScalar <- mean(dnorm(predict(probit, type = "link")))
+ProbitScalar
+AVG_MarginalProbit<-ProbitScalar * coef(probit)
+```
+
+logit model predicted probabilities
+```{r}
+plogit<-predict(logit, type="response")
+summary(plogit)
+```
+
+probit model predicted probabilities
+```{r}
+pprobit<-predict(probit,type ="response")
+summary(pprobit)
+```
+
+```{r}
+require("stargazer")
+stargazer(logit, probit, type = "text")
+stargazer(AVG_MarginalProbit, AVG_MarginalProbit, type = "text")
+```
+
+Pseudo R-squared
+```{r}
+probit_k<-update(probit, formula= Y ~ 1)
+R_squared<- 1-as.vector(logLik(probit)/logLik(probit_k))
+R_squared
+```
+
+
+Interpretation:
+We are trying to find the probability of person that have insurance cover. Based on the cofficients for probit and logit model. Individuals who are veteran, married, white, or Female are more likely to have insurance cover. Individuals who are African, Hispanic, with No HS degree, HS degree, somecollege degree, Associated degree, bachelor degree, or divorce are less likely to have insurance cover.
+
+
+Probability of individuals who are 45 year old, White, and with No HS degree have insurance cover is 94.2%(Logit), and 94.3%(Probit)
+
+Probability of individuals who are 45 year old, African, and with no Hs degree have insurance cover is 90.4% (logit) and 90.3% (Probit).
+
+The difference between those two are 94.2- 90.4 = 3.8%.  In other word, given they are 45 year old and No Hs degree, White have 3.8% more likely to have insurance cover than African.
+
+
+
+
+
+
+
+
+
+So the last estimation we are going to use is the Factor Analysis/PCA. We decided to explore with this estimation because this will be a very useful estimation for the final project. The Factor Analysis reduction is used when you have a lot of variables in your dataset and you wonder if all of them should be used in your analysis. Some of these variables might be redundant and therefore can be expressed with fewer factors or components. Factor Analysis/PCA is also a useful tool if you wish to find patterns of associations across variables. Using the PUMS dataset we used a list of variables to see if this could be accomplished. First we will start with PCA where the components are computed as linear combinations of the variables as are orginially set in the data. For Factor Analysis, the variables in the dataset are defined as linear combinations of the factors.
+
+Define variables
+```{r}
+X <- cbind(Age,female,white,in_NYC,below_150poverty,below_200poverty,foodstamps,work_fullyr,income_total,income_wagesal,HH_income, owner_cost,veteran, Married, divwidsep)
+summary(X)
+```
+
+Here we find the Principal component analysis
+```{r}
+pca1 <- princomp(X, scores=TRUE, cor=TRUE)
+summary(pca1)
+cor(X)
+```
+
+
+Here we get the Loadings of principal components
+```{r}
+loadings(pca1)
+```
+
+
+This gives you the Scree plot of eigenvalues - This is useful to show which components or factors are explain the most variability within the data.
+```{r}
+plot(pca1)
+screeplot(pca1, type="line", main="Scree Plot")
+```
+
+
+So with this graph we can see where there is a “break” in the plot and the rest of the are factors are therefore explaining less variation then the others.
+
+Now you can see the Biplot of score variables
+```{r}
+biplot(pca1)
+```
+
+Here we get the Scores of the components
+```{r}
+pca1$scores[1:20,]
+```
+
+
+So we use CPA when there is a sufficient correlation between the original variables in the dataset to warrant factor/component estimation.principal components analysis and values that are 0.5 are considered satisfactory for a principal components analysis.
+
+Now we can use the Factor analysis
+
+```{r}
+fa <- factanal(X, factors=5, rotation="varimax", scores="regression")
+fa
+```
+
+
+The numbers are now used to see which have the highest number and these (We want the fewest variables for each factor) and can be combined. Now these factors can be used instead of the original variables. This method however can be tricky as it there can be trade-off between having as factors as possible and completeness.
+
+
+

@@ -1,0 +1,120 @@
+---
+title: 'Homework #7 probit and logit'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Now, we are using probit and logit regression to find what is the probability that individuals have insurance. Prob(Has_AnyHealthIns=1 | female, white, African American, Hispanic, No HS degree, HS degree, somecollege, associate degree, Bachelor degree, Advance degree, vETERAN, Married, Divorce, Unmarried, and working full year)
+
+```{r}
+attach(dat_pums_NY)
+
+Y<-cbind(has_AnyHealthIns)
+X1 <- cbind(Age,female,white, AfAm, Asian, Hispanic, educ_nohs, educ_hs, educ_smcoll, educ_as, educ_bach, educ_adv, veteran, Married, divwidsep)
+
+summary((Y))
+summary(X1)
+table(Y)
+table(Y)/sum(table(Y))
+```
+
+Now, we are going to look at logit regression model
+```{r}
+
+logit<- glm(Y ~ X1, family=binomial (link = "logit"), na.action = na.exclude)
+
+summary(logit)
+```
+
+
+Logit model odds ratios:
+If the odds ratios is greater than 1, it means that outcome ofhave insurance cover is more likely than outcome of people did not have insurance cover. 
+```{r}
+exp(logit$coefficients)
+```
+
+Probit regression model
+```{r}
+
+probit<- glm(Y~X1, family = binomial(link = "probit"), na.action = na.exclude)
+summary(probit)
+```
+
+Logit model average mariginal effects
+```{r}
+LogitScalar <- mean(dlogis(predict(logit, type = "link"))) #average of predict value
+LogitScalar
+AVG_MarginalLogit<-LogitScalar * coef(logit)
+```
+
+Probit model average mariginal effects
+```{r}
+# Probit model average marginal effects
+ProbitScalar <- mean(dnorm(predict(probit, type = "link")))
+ProbitScalar
+AVG_MarginalProbit<-ProbitScalar * coef(probit)
+```
+
+logit model predicted probabilities
+```{r}
+plogit<-predict(logit, type="response")
+summary(plogit)
+```
+
+probit model predicted probabilities
+```{r}
+pprobit<-predict(probit,type ="response")
+summary(pprobit)
+```
+
+```{r}
+require("stargazer")
+stargazer(logit, probit, type = "text")
+stargazer(AVG_MarginalProbit, AVG_MarginalProbit, type = "text")
+```
+
+Pseudo R-squared
+```{r}
+probit_k<-update(probit, formula= Y ~ 1)
+R_squared<- 1-as.vector(logLik(probit)/logLik(probit_k))
+R_squared
+```
+
+
+Interpretation:
+We are trying to find the probability of person that have insurance cover. Based on the cofficients for probit and logit model. Individuals who are veteran, married, white, or Female are more likely to have insurance cover. Individuals who are African, Hispanic, with No HS degree, HS degree, somecollege degree, Associated degree, bachelor degree, or divorce are less likely to have insurance cover.
+
+
+Probability of individuals who are 45 year old, White, and with No HS degree have insurance cover is 94.2%(Logit), and 94.3%(Probit)
+
+Probability of individuals who are 45 year old, African, and with no Hs degree have insurance cover is 90.4% (logit) and 90.3% (Probit).
+
+The difference between those two are 94.2- 90.4 = 3.8%.  In other word, given they are 45 year old and No Hs degree, White have 3.8% more likely to have insurance cover than African.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
