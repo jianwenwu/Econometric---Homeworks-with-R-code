@@ -1,1 +1,1 @@
-# Econometric_Final-Project-and-Homework-
+# Econometric Final Project and Homework
